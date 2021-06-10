@@ -5331,21 +5331,20 @@ status_t ACodec::getPortFormat(OMX_U32 portIndex, sp<AMessage> &notify) {
                             err = mOMXNode->getParameter(
                                     (OMX_INDEXTYPE)OMX_IndexParamAudioAndroidAacDrcPresentation,
                                     &presentation, sizeof(presentation));
-                            if (err != OK) {
-                                return err;
+                            if (err == OK) {
+                                notify->setInt32("aac-encoded-target-level",
+                                                 presentation.nEncodedTargetLevel);
+                                notify->setInt32("aac-drc-cut-level", presentation.nDrcCut);
+                                notify->setInt32("aac-drc-boost-level", presentation.nDrcBoost);
+                                notify->setInt32("aac-drc-heavy-compression",
+                                                 presentation.nHeavyCompression);
+                                notify->setInt32("aac-target-ref-level",
+                                                 presentation.nTargetReferenceLevel);
+                                notify->setInt32("aac-drc-effect-type", presentation.nDrcEffectType);
+                                notify->setInt32("aac-drc-album-mode", presentation.nDrcAlbumMode);
+                                notify->setInt32("aac-drc-output-loudness",
+                                                 presentation.nDrcOutputLoudness);
                             }
-                            notify->setInt32("aac-encoded-target-level",
-                                             presentation.nEncodedTargetLevel);
-                            notify->setInt32("aac-drc-cut-level", presentation.nDrcCut);
-                            notify->setInt32("aac-drc-boost-level", presentation.nDrcBoost);
-                            notify->setInt32("aac-drc-heavy-compression",
-                                             presentation.nHeavyCompression);
-                            notify->setInt32("aac-target-ref-level",
-                                             presentation.nTargetReferenceLevel);
-                            notify->setInt32("aac-drc-effect-type", presentation.nDrcEffectType);
-                            notify->setInt32("aac-drc-album-mode", presentation.nDrcAlbumMode);
-                            notify->setInt32("aac-drc-output-loudness",
-                                             presentation.nDrcOutputLoudness);
                         }
                     }
                     break;
@@ -7033,10 +7032,9 @@ status_t ACodec::LoadedState::setupInputSurface() {
         return err;
     }
 
-    using hardware::media::omx::V1_0::utils::TWOmxNode;
     err = statusFromBinderStatus(
             mCodec->mGraphicBufferSource->configure(
-                    new TWOmxNode(mCodec->mOMXNode),
+                    mCodec->mOMXNode->getHalInterface<IOmxNode>(),
                     static_cast<hardware::graphics::common::V1_0::Dataspace>(dataSpace)));
     if (err != OK) {
         ALOGE("[%s] Unable to configure for node (err %d)",
